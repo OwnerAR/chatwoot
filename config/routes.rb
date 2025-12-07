@@ -24,6 +24,7 @@ Rails.application.routes.draw do
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_instagram_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_instagram_inbox_settings'
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_email_inbox_settings'
+    get '/app/accounts/:account_id/settings/billing', to: 'dashboard#index', as: 'app_account_billing_settings'
 
     resource :widget, only: [:show]
     namespace :survey do
@@ -141,6 +142,7 @@ Rails.application.routes.draw do
               post :custom_attributes
               get :attachments
               get :inbox_assistant
+              get :reporting_events if ChatwootApp.enterprise?
             end
           end
 
@@ -153,7 +155,11 @@ Rails.application.routes.draw do
             end
           end
 
-          resources :companies, only: [:index, :show, :create, :update, :destroy]
+          resources :companies, only: [:index, :show, :create, :update, :destroy] do
+            collection do
+              get :search
+            end
+          end
           resources :contacts, only: [:index, :show, :update, :create, :destroy] do
             collection do
               get :active
@@ -172,6 +178,7 @@ Rails.application.routes.draw do
               resources :contact_inboxes, only: [:create]
               resources :labels, only: [:create, :index]
               resources :notes
+              post :call, on: :member, to: 'calls#create' if ChatwootApp.enterprise?
             end
           end
           resources :csat_survey_responses, only: [:index] do
@@ -186,6 +193,7 @@ Rails.application.routes.draw do
               get :download
             end
           end
+          resources :reporting_events, only: [:index] if ChatwootApp.enterprise?
           resources :custom_attribute_definitions, only: [:index, :show, :create, :update, :destroy]
           resources :custom_filters, only: [:index, :show, :create, :update, :destroy]
           resources :inboxes, only: [:index, :show, :create, :update, :destroy] do
@@ -431,6 +439,7 @@ Rails.application.routes.draw do
               post :subscription
               get :limits
               post :toggle_deletion
+              post :topup_checkout
             end
           end
         end
@@ -544,6 +553,7 @@ Rails.application.routes.draw do
         collection do
           post 'call/:phone', action: :call_twiml
           post 'status/:phone', action: :status
+          post 'conference_status/:phone', action: :conference_status
         end
       end
     end
